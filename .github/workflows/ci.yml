@@ -43,7 +43,8 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          install-mode: goinstall
+          version: v1.64.8
 
       - name: Check formatting
         run: |
