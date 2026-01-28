@@ -21,7 +21,7 @@ spec:
         app: ipmi-cert-pusher
     spec:
       containers:
-      - image: ghcr.io/matt-e/ipmi-cert-pusher:0.1
+      - image: ghcr.io/matt-e/ipmi-cert-pusher:0.1.1
         imagePullPolicy: IfNotPresent
         name: ipmi-cert-pusher
         ports:
