@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ipmi-updater
+  labels:
+    app.kubernetes.io/name: ipmi-updater
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/part-of: ipmi-updater
