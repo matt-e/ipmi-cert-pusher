@@ -1,0 +1,20 @@
+poll_interval: 5m          # how often to check for cert changes
+tls_dial_timeout: 10s      # timeout for connecting to IPMI HTTPS
+saa_binary: /opt/saa/saa   # path to SAA executable
+
+servers:
+  - name: server01
+    ipmi_host: 192.168.1.11
+    cert_path: /certs/server01/tls.crt
+    key_path: /certs/server01/tls.key
+    credentials:
+      username_file: /credentials/server01/username
+      password_file: /credentials/server01/password
+
+  - name: server02
+    ipmi_host: 192.168.1.12
+    cert_path: /certs/server02/tls.crt
+    key_path: /certs/server02/tls.key
+    credentials:
+      username_file: /credentials/server02/username
+      password_file: /credentials/server02/password
