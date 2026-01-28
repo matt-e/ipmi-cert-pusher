@@ -4,9 +4,12 @@ import (
 	"context"
 	"flag"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -33,6 +36,15 @@ func main() {
 	for _, s := range cfg.Servers {
 		slog.Info("server configured", "name", s.Name, "host", s.IPMIHost)
 	}
+
+	go func() {
+		slog.Info("starting metrics server", "addr", ":8080")
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.Handler())
+		if err := http.ListenAndServe(":8080", mux); err != nil {
+			slog.Error("metrics server failed", "error", err)
+		}
+	}()
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()

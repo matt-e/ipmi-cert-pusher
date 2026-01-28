@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"os"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type serverState struct {
@@ -58,9 +60,14 @@ func (w *Watcher) checkServer(ctx context.Context, server ServerConfig) {
 	log := slog.With("server", server.Name, "host", server.IPMIHost)
 	st := w.state[server.Name]
 
+	checkRequestsTotal.WithLabelValues(server.Name).Inc()
+	timer := prometheus.NewTimer(checkDurationSeconds.WithLabelValues(server.Name))
+	defer timer.ObserveDuration()
+
 	// Step 1: Check cert file modification time.
 	info, err := os.Stat(server.CertPath)
 	if err != nil {
+		checkErrorsTotal.WithLabelValues(server.Name, "stat").Inc()
 		log.Warn("cert file not accessible, skipping", "path", server.CertPath, "error", err)
 		return
 	}
@@ -72,8 +79,9 @@ func (w *Watcher) checkServer(ctx context.Context, server ServerConfig) {
 	}
 
 	// Step 2: Compute local fingerprint.
-	localFP, err := FingerprintFromFile(server.CertPath)
+	localFP, _, err := FingerprintFromFile(server.CertPath)
 	if err != nil {
+		checkErrorsTotal.WithLabelValues(server.Name, "fingerprint_local").Inc()
 		log.Warn("failed to read local cert, skipping", "error", err)
 		return
 	}
@@ -85,11 +93,15 @@ func (w *Watcher) checkServer(ctx context.Context, server ServerConfig) {
 	}
 
 	// Step 3: Get remote fingerprint.
-	remoteFP, err := FingerprintFromRemote(server.IPMIHost, w.cfg.TLSDialTimeout)
+	remoteFP, remoteExpiry, err := FingerprintFromRemote(server.IPMIHost, w.cfg.TLSDialTimeout)
 	if err != nil {
+		checkErrorsTotal.WithLabelValues(server.Name, "fingerprint_remote").Inc()
 		log.Warn("failed to get remote cert, skipping (BMC may be rebooting)", "error", err)
 		return
 	}
+
+	// Record remote certificate expiry.
+	certificateExpirySeconds.WithLabelValues(server.Name).Set(time.Until(remoteExpiry).Seconds())
 
 	// Step 4: Compare fingerprints.
 	if localFP == remoteFP {
@@ -104,15 +116,18 @@ func (w *Watcher) checkServer(ctx context.Context, server ServerConfig) {
 	// Step 5: Read credentials and push.
 	username, password, err := server.Credentials.ReadCredentials()
 	if err != nil {
+		checkErrorsTotal.WithLabelValues(server.Name, "credentials").Inc()
 		log.Error("failed to read credentials, skipping", "error", err)
 		return
 	}
 
 	if err := RunSAA(ctx, w.cfg.SAABinary, server.IPMIHost, username, password, server.CertPath, server.KeyPath); err != nil {
+		checkErrorsTotal.WithLabelValues(server.Name, "saa_push").Inc()
 		log.Error("SAA push failed", "error", err)
 		return
 	}
 
+	pushTotal.WithLabelValues(server.Name).Inc()
 	log.Info("certificate pushed successfully")
 	st.lastFingerprint = localFP
 	st.lastModTime = modTime
