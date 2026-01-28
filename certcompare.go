@@ -54,4 +54,3 @@ func FingerprintFromRemote(host string, timeout time.Duration) ([sha256.Size]byt
 
 	return sha256.Sum256(certs[0].Raw), certs[0].NotAfter, nil
 }
-
