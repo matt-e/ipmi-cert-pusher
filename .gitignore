@@ -30,3 +30,11 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+local/*
+secrets.yaml
+ipmi-cert-pusher
+.gitignore
+*.log
+*.test.yaml
+
