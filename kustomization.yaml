@@ -6,12 +6,8 @@ configMapGenerator:
   files:
   - config.yaml
 
-
-
-
 resources:
   - namespace.yaml
   - deployments.apps.yaml
   - certificates.yaml
-  #- secrets.yaml
 namespace: ipmi-updater

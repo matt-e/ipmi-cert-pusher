@@ -21,12 +21,9 @@ spec:
         app: ipmi-cert-pusher
     spec:
       containers:
-      - image: nginx
+      - image: ghcr.io/matt-e/ipmi-cert-pusher:0.1
         imagePullPolicy: IfNotPresent
-        name: nginx
-        ports:
-        - containerPort: 80
-          protocol: TCP
+        name: ipmi-cert-pusher
         resources: {}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
@@ -47,7 +44,7 @@ spec:
           name: smx04-tls
           readOnly: true
         - mountPath: /credentials
-          name: ipmi-credentials
+          name: credentials
           readOnly: true
       dnsPolicy: ClusterFirst
       restartPolicy: Always
